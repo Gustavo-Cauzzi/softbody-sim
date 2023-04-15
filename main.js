@@ -1,41 +1,20 @@
 let c1, c2, cn1;
 const connections = [];
 const circles = [];
-const springDrag = 0.9;
+const springDrag = 0.95;
+const gravity = 9.8 / 10;
+
+document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  // frameRate(1);
 
-  circles.push(new Circle(75, 200, 15));
-  circles.push(new Circle(150, 100, 15));
-  circles.push(new Circle(300, 100, 15));
-  circles.push(new Circle(375, 200, 15));
-  circles.push(new Circle(300, 300, 15));
-  circles.push(new Circle(150, 300, 15));
-
-  circles.push(new Circle(200, 200, 15));
-
-  //   circles.forEach((circle, i) => {
-  //     for (let j = i + 1; j < circles.length; j++) {
-  //       connections.push(new Connection(circle, circles[j], 0.2, 200));
-  //     }
-  //   });
-
-  const conn = 100;
-  const k = 0.5;
-  for (let i = 0; i < circles.length - 1; i++) {
-    connections.push(
-      new Connection(circles[i], circles[circles.length - 1], k, conn)
-    );
-    if (i !== circles.length - 2) {
-      connections.push(
-        new Connection(circles[i], circles[i + 1], k + 0.2, conn)
-      );
-    }
-  }
-  connections.push(
-    new Connection(circles[0], circles[circles.length - 2], k + 0.2, conn)
-  );
+  const { circles: c, connections: cons } = hexagon();
+  // const { circles: c, connections: cons } = trianglePreset(false);
+  // const { circles: c, connections: cons } = linePreset(false);
+  circles.push(...c);
+  connections.push(...cons);
 }
 
 function draw() {
@@ -43,79 +22,53 @@ function draw() {
   fill("#aaa");
   stroke("#aaa");
 
-  if (mouseIsPressed) {
-    circles[circles.length - 1].x = mouseX;
-    circles[circles.length - 1].y = mouseY;
-  }
-
-  circles.forEach((c) => c.render());
   connections.forEach((cn) => cn.render());
+  circles.forEach((c) => c.render());
 
   connections.forEach((con) => {
     con.calculateForce();
   });
-  connections.forEach((con) => {
-    con.applyForce();
+  circles.forEach((c) => {
+    c.addGravityForce();
+    c.applyForce();
+    c.applyVelocity();
+    c.checkGround();
   });
+
+  moveBallWithMouseCheck();
 }
 
-class Circle {
-  constructor(x, y, r) {
-    this.x = x;
-    this.y = y;
-    this.r = r;
-    this.m = 1;
-  }
+let grabbedCircle;
+function moveBallWithMouseCheck() {
+  if (mouseIsPressed) {
+    const currentGrabbedCircle =
+      grabbedCircle ??
+      circles.find(
+        (circle) => dist(mouseX, mouseY, circle.pos.x, circle.pos.y) <= circle.r
+      );
 
-  render() {
-    strokeWeight(2);
-    circle(this.x, this.y, this.r);
-  }
+    console.log("currentGrabbedCircle: ", currentGrabbedCircle);
 
-  setX(x) {
-    this.x = Math.min(Math.max(x, 0), windowWidth);
-  }
+    if (currentGrabbedCircle) {
+      grabbedCircle = currentGrabbedCircle;
 
-  setY(y) {
-    this.y = Math.min(Math.max(y, 0), windowHeight);
-  }
-}
+      if (mouseButton === LEFT) {
+        const force = createVector(mouseX, mouseY)
+          .sub(createVector(grabbedCircle.pos.x, grabbedCircle.pos.y))
+          .normalize()
+          .mult(6);
 
-class Connection {
-  constructor(circle1, circle2, k, length) {
-    this.circle1 = circle1;
-    this.circle2 = circle2;
-    this.k = k;
-    this.v = createVector(0, 0);
-    this.length =
-      length ??
-      dist(this.circle1.x, this.circle1.y, this.circle2.x, this.circle2.y);
-  }
+        grabbedCircle.addForce(force);
+      } else {
+        grabbedCircle.setPos(createVector(mouseX, mouseY));
+      }
 
-  render() {
-    strokeWeight(3);
-    line(this.circle1.x, this.circle1.y, this.circle2.x, this.circle2.y);
-  }
-
-  calculateForce() {
-    const deltaLength =
-      this.length -
-      dist(this.circle1.x, this.circle1.y, this.circle2.x, this.circle2.y);
-
-    const force = (this.k * deltaLength) / 10;
-
-    const v2 = createVector(this.circle1.x, this.circle1.y);
-    const v1 = createVector(this.circle2.x, this.circle2.y);
-
-    const acc = v1.sub(v2).setMag(force);
-    this.v = this.v.add(acc);
-    this.v = this.v.setMag(this.v.mag() * springDrag);
-  }
-
-  applyForce() {
-    this.circle1.setX(this.circle1.x - this.v.x);
-    this.circle1.setY(this.circle1.y - this.v.y);
-    this.circle2.setX(this.circle2.x + this.v.x);
-    this.circle2.setY(this.circle2.y + this.v.y);
+      console.log("line: ", line);
+    }
+  } else {
+    if (grabbedCircle) {
+      grabbedCircle.forcedFill = undefined;
+      grabbedCircle = null;
+    }
   }
 }
