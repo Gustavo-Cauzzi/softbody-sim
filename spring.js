@@ -1,4 +1,4 @@
-class Connection {
+class Spring {
   constructor(circle1, circle2, k, length, debug = false) {
     this.circle1 = circle1;
     this.circle2 = circle2;

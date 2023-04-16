@@ -1,44 +1,45 @@
-const hexagon = () => {
-  const circles = [];
-  const connections = [];
-  circles.push(new Circle(75, 200, 1));
-  circles.push(new Circle(150, 100, 1));
-  circles.push(new Circle(300, 100, 1));
-  circles.push(new Circle(375, 200, 1));
-  circles.push(new Circle(300, 300, 1));
-  circles.push(new Circle(150, 300, 1));
-
-  circles.push(new Circle(200, 200, 1));
+const hexagon = ({ displacement = 0 } = {}) => {
+  const particles = [
+    new Particle(75, 200, 1),
+    new Particle(150, 100, 1),
+    new Particle(300, 100, 1),
+    new Particle(375, 200, 1),
+    new Particle(300, 300, 1),
+    new Particle(150, 300, 1),
+    new Particle(200, 200, 1),
+  ].map((circle) => {
+    circle.pos.x += displacement;
+    return circle;
+  });
+  const springs = [];
 
   const conn = 100;
   const k = 2;
-  for (let i = 0; i < circles.length - 1; i++) {
-    connections.push(
-      new Connection(circles[i], circles[circles.length - 1], k, conn)
+  for (let i = 0; i < particles.length - 1; i++) {
+    springs.push(
+      new Spring(particles[i], particles[particles.length - 1], k, conn)
     );
-    if (i !== circles.length - 2) {
-      connections.push(
-        new Connection(circles[i], circles[i + 1], k + 0.2, conn)
-      );
+    if (i !== particles.length - 2) {
+      springs.push(new Spring(particles[i], particles[i + 1], k + 0.2, conn));
     }
   }
-  connections.push(
-    new Connection(circles[0], circles[circles.length - 2], k + 0.2, conn)
+  springs.push(
+    new Spring(particles[0], particles[particles.length - 2], k + 0.2, conn)
   );
 
-  return { connections, circles };
+  return new Polygon({ particles, springs });
 };
 
 const linePreset = (flexed = true) => {
   const circles = [];
   const connections = [];
 
-  circles.push(new Circle(100, 100, 1, true));
-  circles.push(new Circle(300, 100, 1));
+  circles.push(new Particle(100, 100, 1, true));
+  circles.push(new Particle(300, 100, 1));
 
   const length = flexed ? 100 : undefined;
 
-  connections.push(new Connection(circles[0], circles[1], 0.5, length, true));
+  connections.push(new Spring(circles[0], circles[1], 0.5, length, true));
 
   return { circles, connections };
 };
@@ -47,15 +48,15 @@ const trianglePreset = (flexed = true) => {
   const circles = [];
   const connections = [];
 
-  circles.push(new Circle(100, 100, 1, true));
-  circles.push(new Circle(300, 100, 1));
-  circles.push(new Circle(200, 200, 1));
+  circles.push(new Particle(100, 100, 1, true));
+  circles.push(new Particle(300, 100, 1));
+  circles.push(new Particle(200, 200, 1));
 
   const length = flexed ? 100 : undefined;
 
-  connections.push(new Connection(circles[0], circles[1], 1, length, true));
-  connections.push(new Connection(circles[1], circles[2], 1, length));
-  connections.push(new Connection(circles[2], circles[0], 1, length));
+  connections.push(new Spring(circles[0], circles[1], 1, length, true));
+  connections.push(new Spring(circles[1], circles[2], 1, length));
+  connections.push(new Spring(circles[2], circles[0], 1, length));
 
   return { circles, connections };
 };

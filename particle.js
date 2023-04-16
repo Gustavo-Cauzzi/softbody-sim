@@ -1,4 +1,4 @@
-class Circle {
+class Particle {
   constructor(x, y, m, debug = false) {
     this.pos = createVector(x, y);
     this.r = m * 20;
@@ -12,9 +12,11 @@ class Circle {
   render() {
     strokeWeight(2);
     if (this.forcedFill) {
-      stroke(this.forcedFill), fill(this.forcedFill);
+      stroke(this.forcedFill);
+      fill(this.forcedFill);
     } else if (this.debug) {
-      stroke("#0f0"), fill("#0f0");
+      stroke("#0f0");
+      fill("#0f0");
     } else {
       stroke("#aaa");
       fill("#aaa");

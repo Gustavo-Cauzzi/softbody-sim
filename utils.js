@@ -1,0 +1,1 @@
+const isTruthy = (value) => !!value;

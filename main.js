@@ -1,6 +1,5 @@
 let c1, c2, cn1;
-const connections = [];
-const circles = [];
+const polygons = [];
 const springDrag = 0.95;
 const gravity = 9.8 / 10;
 
@@ -8,13 +7,17 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  // frameRate(1);
 
-  const { circles: c, connections: cons } = hexagon();
-  // const { circles: c, connections: cons } = trianglePreset(false);
-  // const { circles: c, connections: cons } = linePreset(false);
-  circles.push(...c);
-  connections.push(...cons);
+  polygons.push(
+    ...[
+      hexagon(),
+      hexagon({ displacement: 300 }),
+      /*
+      trianglePreset(false), 
+      linePreset(false) ,
+      */
+    ]
+  );
 }
 
 function draw() {
@@ -22,53 +25,53 @@ function draw() {
   fill("#aaa");
   stroke("#aaa");
 
-  connections.forEach((cn) => cn.render());
-  circles.forEach((c) => c.render());
-
-  connections.forEach((con) => {
-    con.calculateForce();
-  });
-  circles.forEach((c) => {
-    c.addGravityForce();
-    c.applyForce();
-    c.applyVelocity();
-    c.checkGround();
+  polygons.forEach((polygon) => {
+    polygon.render();
+    polygon.calculateForces();
   });
 
   moveBallWithMouseCheck();
 }
 
-let grabbedCircle;
+let grabbedParticle;
 function moveBallWithMouseCheck() {
   if (mouseIsPressed) {
-    const currentGrabbedCircle =
-      grabbedCircle ??
-      circles.find(
-        (circle) => dist(mouseX, mouseY, circle.pos.x, circle.pos.y) <= circle.r
-      );
+    const currentGrabbedParticle =
+      grabbedParticle ??
+      polygons
+        .map((polygon) =>
+          polygon.particles.find(
+            (circle) =>
+              dist(mouseX, mouseY, circle.pos.x, circle.pos.y) <= circle.r
+          )
+        )
+        .find(isTruthy);
 
-    console.log("currentGrabbedCircle: ", currentGrabbedCircle);
-
-    if (currentGrabbedCircle) {
-      grabbedCircle = currentGrabbedCircle;
+    if (currentGrabbedParticle) {
+      grabbedParticle = currentGrabbedParticle;
 
       if (mouseButton === LEFT) {
         const force = createVector(mouseX, mouseY)
-          .sub(createVector(grabbedCircle.pos.x, grabbedCircle.pos.y))
-          .normalize()
-          .mult(6);
+          .sub(createVector(grabbedParticle.pos.x, grabbedParticle.pos.y))
+          .mult(MOUSE_GRAB_FORCE_MULTIPLIER);
 
-        grabbedCircle.addForce(force);
+        grabbedParticle.addForce(force);
+
+        stroke("#f00");
+        line(
+          grabbedParticle.pos.x,
+          grabbedParticle.pos.y,
+          grabbedParticle.pos.x + force.x,
+          grabbedParticle.pos.y + force.y
+        );
       } else {
-        grabbedCircle.setPos(createVector(mouseX, mouseY));
+        grabbedParticle.setPos(createVector(mouseX, mouseY));
       }
-
-      console.log("line: ", line);
     }
   } else {
-    if (grabbedCircle) {
-      grabbedCircle.forcedFill = undefined;
-      grabbedCircle = null;
+    if (grabbedParticle) {
+      grabbedParticle.forcedFill = undefined;
+      grabbedParticle = null;
     }
   }
 }
